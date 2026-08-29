@@ -3,21 +3,21 @@ using UnityEngine;
 /*
  * FirstPersonAnimation
  * --------------------
- * Feeds basic gameplay state into the first-person Animator.
+ * Feeds player locomotion state into the first-person hand Animator.
  *
  * Responsibilities:
- * - calculate current horizontal movement speed
- * - update movement animation parameters
- * - update grounded state
+ * - provide current horizontal movement speed
+ * - provide grounded state
+ * - provide sprinting state
  *
- * Attack animation handling will be added later.
+ * Melee attack parameters will be added later.
  */
 
 public class FirstPersonAnimation : MonoBehaviour
 {
     [Header("References")]
     [SerializeField] private Animator animator;
-    [SerializeField] private CharacterController characterController;
+    [SerializeField] private PlayerMovement playerMovement;
 
     private static readonly int MoveSpeedHash =
         Animator.StringToHash("MoveSpeed");
@@ -25,12 +25,24 @@ public class FirstPersonAnimation : MonoBehaviour
     private static readonly int IsGroundedHash =
         Animator.StringToHash("IsGrounded");
 
+    private static readonly int IsSprintingHash =
+        Animator.StringToHash("IsSprinting");
+
     private void Update()
     {
-        Vector3 velocity = characterController.velocity;
-        velocity.y = 0f;
+        animator.SetFloat(
+            MoveSpeedHash,
+            playerMovement.HorizontalSpeed
+        );
 
-        animator.SetFloat(MoveSpeedHash, velocity.magnitude);
-        animator.SetBool(IsGroundedHash, characterController.isGrounded);
+        animator.SetBool(
+            IsGroundedHash,
+            playerMovement.IsGrounded
+        );
+
+        animator.SetBool(
+            IsSprintingHash,
+            playerMovement.IsSprinting
+        );
     }
 }

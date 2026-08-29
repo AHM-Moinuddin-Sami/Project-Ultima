@@ -4,21 +4,19 @@ using UnityEngine.InputSystem;
 /*
  * PlayerMovement
  * --------------
- * Handles first-person movement using Unity's CharacterController.
+ * Handles first-person CharacterController locomotion.
  *
  * Responsibilities:
- * - responsive grounded movement
- * - walking and sprinting
- * - preserve horizontal momentum during jumps
- * - allow limited air control
- * - support stronger sprint-jump momentum
- * - apply gravity
- * - handle jumping
+ * - accelerated walking and sprinting
+ * - forward-only sprinting
+ * - smooth ground deceleration
+ * - jumping
+ * - preserving takeoff momentum while airborne
+ * - limited air control
+ * - gravity
  *
- * Sprinting changes the grounded movement speed.
- * When jumping, the current horizontal velocity is preserved, so sprinting
- * naturally produces a faster and longer jump without needing a separate
- * artificial sprint-jump force.
+ * Horizontal velocity is stored independently from input so momentum
+ * can continue naturally after jumping.
  */
 
 [RequireComponent(typeof(CharacterController))]
@@ -27,6 +25,8 @@ public class PlayerMovement : MonoBehaviour
     [Header("Movement")]
     [SerializeField] private float moveSpeed = 5f;
     [SerializeField] private float sprintSpeed = 8f;
+    [SerializeField] private float acceleration = 20f;
+    [SerializeField] private float deceleration = 25f;
 
     [Header("Air Movement")]
     [SerializeField] private float airAcceleration = 2f;
@@ -48,6 +48,10 @@ public class PlayerMovement : MonoBehaviour
     private bool sprintHeld;
     private bool jumpRequested;
 
+    public bool IsGrounded => characterController.isGrounded;
+    public bool IsSprinting => sprintHeld && moveInput.y > 0.1f;
+    public float HorizontalSpeed => horizontalVelocity.magnitude;
+
     private void Awake()
     {
         characterController = GetComponent<CharacterController>();
@@ -63,14 +67,35 @@ public class PlayerMovement : MonoBehaviour
 
         inputDirection = Vector3.ClampMagnitude(inputDirection, 1f);
 
+        // Sprint only while primarily moving forward.
         bool canSprint = sprintHeld && moveInput.y > 0.1f;
 
-        float currentMoveSpeed = canSprint ? sprintSpeed : moveSpeed;
+        float currentMoveSpeed =
+            canSprint ? sprintSpeed : moveSpeed;
+
+        Vector3 targetVelocity =
+            inputDirection * currentMoveSpeed;
 
         if (isGrounded)
         {
-            // Ground movement directly follows player input.
-            horizontalVelocity = inputDirection * currentMoveSpeed;
+            if (inputDirection.sqrMagnitude > 0f)
+            {
+                // Smoothly accelerate toward the requested movement velocity.
+                horizontalVelocity = Vector3.MoveTowards(
+                    horizontalVelocity,
+                    targetVelocity,
+                    acceleration * Time.deltaTime
+                );
+            }
+            else
+            {
+                // Smoothly slow down when movement input is released.
+                horizontalVelocity = Vector3.MoveTowards(
+                    horizontalVelocity,
+                    Vector3.zero,
+                    deceleration * Time.deltaTime
+                );
+            }
 
             if (verticalVelocity < 0f)
             {
@@ -85,15 +110,8 @@ public class PlayerMovement : MonoBehaviour
         }
         else
         {
-            /*
-             * Preserve the velocity we had when leaving the ground.
-             *
-             * Input can gradually influence airborne movement, but it does
-             * not instantly replace the jump's existing momentum.
-             */
-            Vector3 targetVelocity =
-                inputDirection * currentMoveSpeed;
-
+            // Preserve takeoff momentum while still allowing limited
+            // directional adjustment during the jump.
             horizontalVelocity = Vector3.MoveTowards(
                 horizontalVelocity,
                 targetVelocity,

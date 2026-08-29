@@ -383,7 +383,19 @@ MonoBehaviour:
     m_ActionId: 8c4abdf8-4099-493a-aa1a-129acec7c3df
     m_ActionName: 'Player/Jump[/Keyboard/space]'
   - m_PersistentCalls:
-      m_Calls: []
+      m_Calls:
+      - m_Target: {fileID: 572920129}
+        m_TargetAssemblyTypeName: PlayerMovement, Assembly-CSharp
+        m_MethodName: OnSprint
+        m_Mode: 0
+        m_Arguments:
+          m_ObjectArgument: {fileID: 0}
+          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+          m_IntArgument: 0
+          m_FloatArgument: 0
+          m_StringArgument: 
+          m_BoolArgument: 0
+        m_CallState: 2
     m_ActionId: 980e881e-182c-404c-8cbf-3d09fdb48fef
     m_ActionName: 'Player/Sprint[/Keyboard/leftShift]'
   m_NeverAutoSwitchControlSchemes: 0
@@ -404,6 +416,10 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::PlayerMovement
   moveSpeed: 5
+  sprintSpeed: 10
+  acceleration: 20
+  deceleration: 25
+  airAcceleration: 2
   jumpHeight: 1.5
   gravity: -20
   groundedGravity: -2
@@ -436,7 +452,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::FirstPersonAnimation
   animator: {fileID: 1651309573}
-  characterController: {fileID: 572920126}
+  playerMovement: {fileID: 572920129}
 --- !u!1 &712779708
 GameObject:
   m_ObjectHideFlags: 0
@@ -1626,6 +1642,9 @@ PrefabInstance:
     - targetCorrespondingSourceObject: {fileID: -8679921383154817045, guid: ed67a70f8469b274b8759fe6697f5c4b, type: 3}
       insertIndex: -1
       addedObject: {fileID: 1639154171}
+    - targetCorrespondingSourceObject: {fileID: -6395702490832834688, guid: ed67a70f8469b274b8759fe6697f5c4b, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 2047817783}
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: ed67a70f8469b274b8759fe6697f5c4b, type: 3}
 --- !u!1 &832575517
@@ -1908,6 +1927,11 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Unity.Cinemachine::Unity.Cinemachine.CinemachineRotateWithFollowTarget
   Damping: 0
+--- !u!4 &1345594406 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: -6395702490832834688, guid: ed67a70f8469b274b8759fe6697f5c4b, type: 3}
+  m_PrefabInstance: {fileID: 819095096}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1 &1639154170
 GameObject:
   m_ObjectHideFlags: 0
@@ -1980,6 +2004,81 @@ Transform:
   m_Children: []
   m_Father: {fileID: 572920127}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1001 &2047817782
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 1345594406}
+    m_Modifications:
+    - target: {fileID: -8679921383154817045, guid: 28a9d661a12b2954e8e5dff2dd082cfe, type: 3}
+      propertyPath: m_LocalScale.x
+      value: 0.65
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: 28a9d661a12b2954e8e5dff2dd082cfe, type: 3}
+      propertyPath: m_LocalScale.y
+      value: 0.65
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: 28a9d661a12b2954e8e5dff2dd082cfe, type: 3}
+      propertyPath: m_LocalScale.z
+      value: 0.65
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: 28a9d661a12b2954e8e5dff2dd082cfe, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: 28a9d661a12b2954e8e5dff2dd082cfe, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: -0.248
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: 28a9d661a12b2954e8e5dff2dd082cfe, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 0.4457
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: 28a9d661a12b2954e8e5dff2dd082cfe, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: 28a9d661a12b2954e8e5dff2dd082cfe, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: 28a9d661a12b2954e8e5dff2dd082cfe, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: 28a9d661a12b2954e8e5dff2dd082cfe, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: 28a9d661a12b2954e8e5dff2dd082cfe, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: 28a9d661a12b2954e8e5dff2dd082cfe, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: 28a9d661a12b2954e8e5dff2dd082cfe, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 919132149155446097, guid: 28a9d661a12b2954e8e5dff2dd082cfe, type: 3}
+      propertyPath: m_Name
+      value: Sword of mercenary
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects:
+    - {fileID: 2463706537061040287, guid: 28a9d661a12b2954e8e5dff2dd082cfe, type: 3}
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: 28a9d661a12b2954e8e5dff2dd082cfe, type: 3}
+--- !u!4 &2047817783 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: -8679921383154817045, guid: 28a9d661a12b2954e8e5dff2dd082cfe, type: 3}
+  m_PrefabInstance: {fileID: 2047817782}
+  m_PrefabAsset: {fileID: 0}
 --- !u!224 &80149273084946893
 RectTransform:
   m_ObjectHideFlags: 0
