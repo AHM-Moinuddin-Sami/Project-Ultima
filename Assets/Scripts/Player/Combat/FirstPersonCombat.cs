@@ -4,16 +4,14 @@ using UnityEngine.InputSystem;
 /*
  * FirstPersonCombat
  * -----------------
- * Handles a buffered three-hit light attack combo.
+ * Handles first-person melee attacks.
  *
  * Responsibilities:
- * - start the first light attack
- * - queue the next attack when the player clicks during a combo
- * - progress through LightAttack1 -> LightAttack2 -> LightAttack3
- * - reset the combo when the player stops attacking
- * - forward animation events to melee hit detection
- *
- * Animation Events control when the next queued attack may begin.
+ * - three-hit buffered light combo
+ * - single heavy attack
+ * - configure damage and bonus range per attack
+ * - prevent attacks from overlapping
+ * - control melee damage windows through animation events
  */
 
 public class FirstPersonCombat : MonoBehaviour
@@ -21,6 +19,22 @@ public class FirstPersonCombat : MonoBehaviour
     [Header("References")]
     [SerializeField] private Animator animator;
     [SerializeField] private MeleeHitDetector hitDetector;
+
+    [Header("Light Attack 1")]
+    [SerializeField] private float light1Damage = 20f;
+    [SerializeField] private float light1BonusRange = 0f;
+
+    [Header("Light Attack 2")]
+    [SerializeField] private float light2Damage = 25f;
+    [SerializeField] private float light2BonusRange = 0f;
+
+    [Header("Light Attack 3")]
+    [SerializeField] private float light3Damage = 35f;
+    [SerializeField] private float light3BonusRange = 0.1f;
+
+    [Header("Heavy Attack")]
+    [SerializeField] private float heavyDamage = 50f;
+    [SerializeField] private float heavyBonusRange = 0.4f;
 
     private static readonly int LightAttack1Hash =
         Animator.StringToHash("LightAttack1");
@@ -31,20 +45,23 @@ public class FirstPersonCombat : MonoBehaviour
     private static readonly int LightAttack3Hash =
         Animator.StringToHash("LightAttack3");
 
+    private static readonly int HeavyAttackHash =
+        Animator.StringToHash("HeavyAttack");
+
     private int comboIndex;
 
     private bool isAttacking;
     private bool attackQueued;
     private bool canContinueCombo;
+    private bool isHeavyAttack;
 
     public void OnLightAttack(InputAction.CallbackContext context)
     {
-        if (!context.performed)
+        if (!context.performed || isHeavyAttack)
         {
             return;
         }
 
-        // Start a new combo.
         if (!isAttacking)
         {
             comboIndex = 1;
@@ -54,13 +71,10 @@ public class FirstPersonCombat : MonoBehaviour
             return;
         }
 
-        // While an attack is already playing, remember the next click.
         if (comboIndex < 3)
         {
             attackQueued = true;
 
-            // If we're already inside the combo continuation window,
-            // immediately advance to the next attack.
             if (canContinueCombo)
             {
                 ContinueCombo();
@@ -68,13 +82,31 @@ public class FirstPersonCombat : MonoBehaviour
         }
     }
 
-    /*
-     * Animation Event:
-     * Place this late in Attack 1 and Attack 2, where the next
-     * combo attack is allowed to begin.
-     */
+    public void OnHeavyAttack(InputAction.CallbackContext context)
+    {
+        if (!context.performed || isAttacking)
+        {
+            return;
+        }
+
+        isAttacking = true;
+        isHeavyAttack = true;
+
+        hitDetector.ConfigureAttack(
+            heavyDamage,
+            heavyBonusRange
+        );
+
+        animator.SetTrigger(HeavyAttackHash);
+    }
+
     public void OpenComboWindow()
     {
+        if (isHeavyAttack)
+        {
+            return;
+        }
+
         canContinueCombo = true;
 
         if (attackQueued)
@@ -83,21 +115,21 @@ public class FirstPersonCombat : MonoBehaviour
         }
     }
 
-    /*
-     * Animation Event:
-     * Marks the end of the current attack.
-     *
-     * If no attack was queued, the combo ends.
-     */
     public void FinishAttack()
     {
+        if (isHeavyAttack)
+        {
+            ResetCombat();
+            return;
+        }
+
         if (attackQueued && comboIndex < 3)
         {
             ContinueCombo();
             return;
         }
 
-        ResetCombo();
+        ResetCombat();
     }
 
     public void BeginAttack()
@@ -130,25 +162,43 @@ public class FirstPersonCombat : MonoBehaviour
         switch (comboIndex)
         {
             case 1:
+                hitDetector.ConfigureAttack(
+                    light1Damage,
+                    light1BonusRange
+                );
+
                 animator.SetTrigger(LightAttack1Hash);
                 break;
 
             case 2:
+                hitDetector.ConfigureAttack(
+                    light2Damage,
+                    light2BonusRange
+                );
+
                 animator.SetTrigger(LightAttack2Hash);
                 break;
 
             case 3:
+                hitDetector.ConfigureAttack(
+                    light3Damage,
+                    light3BonusRange
+                );
+
                 animator.SetTrigger(LightAttack3Hash);
                 break;
         }
     }
 
-    private void ResetCombo()
+    private void ResetCombat()
     {
         comboIndex = 0;
 
         isAttacking = false;
+        isHeavyAttack = false;
         attackQueued = false;
         canContinueCombo = false;
+
+        hitDetector.EndAttack();
     }
 }

@@ -4,16 +4,14 @@ using UnityEngine;
 /*
  * MeleeHitDetector
  * ----------------
- * Detects melee hits by tracing the sword between frames.
+ * Detects melee hits by tracing the animated weapon between frames.
  *
  * Responsibilities:
- * - trace the blade tip through the space it crossed
- * - trace across the current blade length
- * - apply damage to Health components
- * - prevent the same target from being hit twice in one swing
- * - draw debug lines for tuning the traces
- *
- * BeginAttack and EndAttack are called from animation events.
+ * - trace the blade tip through its movement
+ * - trace along the current blade length
+ * - support different damage values per attack
+ * - support optional bonus reach beyond the blade tip
+ * - prevent the same target from being damaged twice per swing
  */
 
 public class MeleeHitDetector : MonoBehaviour
@@ -26,17 +24,40 @@ public class MeleeHitDetector : MonoBehaviour
     [SerializeField] private float traceRadius = 0.08f;
     [SerializeField] private LayerMask hitMask;
 
-    [Header("Damage")]
-    [SerializeField] private float damage = 25f;
-
     [Header("Debug")]
     [SerializeField] private bool drawDebug = true;
 
+    private float currentDamage;
+    private float currentBonusRange;
+
     private bool attackActive;
 
-    private Vector3 previousTipPosition;
+    private Vector3 previousTraceTip;
 
     private readonly HashSet<Health> hitTargets = new();
+
+    /*
+     * Sets the properties used by the next/current attack.
+     */
+    public void ConfigureAttack(float damage, float bonusRange)
+    {
+        currentDamage = damage;
+        currentBonusRange = bonusRange;
+    }
+
+    public void BeginAttack()
+    {
+        attackActive = true;
+        hitTargets.Clear();
+
+        previousTraceTip = GetTraceTip();
+    }
+
+    public void EndAttack()
+    {
+        attackActive = false;
+        hitTargets.Clear();
+    }
 
     private void LateUpdate()
     {
@@ -45,42 +66,43 @@ public class MeleeHitDetector : MonoBehaviour
             return;
         }
 
-        Vector3 currentTipPosition = bladeTip.position;
+        Vector3 currentTraceTip = GetTraceTip();
 
-        Trace(previousTipPosition, currentTipPosition);
-        Trace(bladeBase.position, currentTipPosition);
+        // Sweep the effective blade tip between frames.
+        Trace(previousTraceTip, currentTraceTip);
+
+        // Check along the current blade, including bonus range.
+        Trace(bladeBase.position, currentTraceTip);
 
         if (drawDebug)
         {
             Debug.DrawLine(
-                previousTipPosition,
-                currentTipPosition,
+                previousTraceTip,
+                currentTraceTip,
                 Color.red
             );
 
             Debug.DrawLine(
                 bladeBase.position,
-                currentTipPosition,
+                currentTraceTip,
                 Color.yellow
             );
         }
 
-        previousTipPosition = currentTipPosition;
+        previousTraceTip = currentTraceTip;
     }
 
-    public void BeginAttack()
+    /*
+     * Returns the real blade tip plus any additional reach
+     * configured for the current attack.
+     */
+    private Vector3 GetTraceTip()
     {
-        attackActive = true;
+        Vector3 bladeDirection =
+            (bladeTip.position - bladeBase.position).normalized;
 
-        hitTargets.Clear();
-
-        previousTipPosition = bladeTip.position;
-    }
-
-    public void EndAttack()
-    {
-        attackActive = false;
-        hitTargets.Clear();
+        return bladeTip.position +
+               bladeDirection * currentBonusRange;
     }
 
     private void Trace(Vector3 start, Vector3 end)
@@ -104,7 +126,8 @@ public class MeleeHitDetector : MonoBehaviour
 
         foreach (RaycastHit hit in hits)
         {
-            Health health = hit.collider.GetComponentInParent<Health>();
+            Health health =
+                hit.collider.GetComponentInParent<Health>();
 
             if (health == null || hitTargets.Contains(health))
             {
@@ -112,7 +135,8 @@ public class MeleeHitDetector : MonoBehaviour
             }
 
             hitTargets.Add(health);
-            health.TakeDamage(damage);
+
+            health.TakeDamage(currentDamage);
 
             if (drawDebug)
             {

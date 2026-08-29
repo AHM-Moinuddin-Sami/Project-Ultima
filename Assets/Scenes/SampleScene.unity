@@ -588,6 +588,22 @@ MonoBehaviour:
         m_CallState: 2
     m_ActionId: 27897343-8079-4244-a60b-2f5254c32154
     m_ActionName: 'Player/LightAttack[/Mouse/leftButton]'
+  - m_PersistentCalls:
+      m_Calls:
+      - m_Target: {fileID: 1651309574}
+        m_TargetAssemblyTypeName: FirstPersonCombat, Assembly-CSharp
+        m_MethodName: OnHeavyAttack
+        m_Mode: 0
+        m_Arguments:
+          m_ObjectArgument: {fileID: 0}
+          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+          m_IntArgument: 0
+          m_FloatArgument: 0
+          m_StringArgument: 
+          m_BoolArgument: 0
+        m_CallState: 2
+    m_ActionId: 51d76cfe-b619-4b69-98b9-d557ae572250
+    m_ActionName: 'Player/Heavy Attack[/Mouse/rightButton]'
   m_NeverAutoSwitchControlSchemes: 0
   m_DefaultControlScheme: KeyboardMouse
   m_DefaultActionMap: Player
@@ -2236,7 +2252,6 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::FirstPersonCombat
   animator: {fileID: 1651309573}
   hitDetector: {fileID: 572920132}
-  lightAttackDuration: 0.8
 --- !u!1 &1826385326
 GameObject:
   m_ObjectHideFlags: 0
