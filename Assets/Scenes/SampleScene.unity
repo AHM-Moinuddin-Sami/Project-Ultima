@@ -604,6 +604,22 @@ MonoBehaviour:
         m_CallState: 2
     m_ActionId: 51d76cfe-b619-4b69-98b9-d557ae572250
     m_ActionName: 'Player/Heavy Attack[/Mouse/rightButton]'
+  - m_PersistentCalls:
+      m_Calls:
+      - m_Target: {fileID: 1651309574}
+        m_TargetAssemblyTypeName: FirstPersonCombat, Assembly-CSharp
+        m_MethodName: OnBlock
+        m_Mode: 0
+        m_Arguments:
+          m_ObjectArgument: {fileID: 0}
+          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+          m_IntArgument: 0
+          m_FloatArgument: 0
+          m_StringArgument: 
+          m_BoolArgument: 0
+        m_CallState: 2
+    m_ActionId: b2302a68-b0f4-4a46-bb81-30e727cc8727
+    m_ActionName: 'Player/Block[/Keyboard/f]'
   m_NeverAutoSwitchControlSchemes: 0
   m_DefaultControlScheme: KeyboardMouse
   m_DefaultActionMap: Player
@@ -677,7 +693,6 @@ MonoBehaviour:
   hitMask:
     serializedVersion: 2
     m_Bits: 512
-  damage: 25
   drawDebug: 1
 --- !u!1 &712779708
 GameObject:
@@ -2252,6 +2267,14 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::FirstPersonCombat
   animator: {fileID: 1651309573}
   hitDetector: {fileID: 572920132}
+  light1Damage: 20
+  light1BonusRange: 0
+  light2Damage: 25
+  light2BonusRange: 0
+  light3Damage: 35
+  light3BonusRange: 0.1
+  heavyDamage: 50
+  heavyBonusRange: 0.4
 --- !u!1 &1826385326
 GameObject:
   m_ObjectHideFlags: 0

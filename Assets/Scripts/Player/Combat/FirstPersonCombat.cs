@@ -48,16 +48,24 @@ public class FirstPersonCombat : MonoBehaviour
     private static readonly int HeavyAttackHash =
         Animator.StringToHash("HeavyAttack");
 
+    private static readonly int IsBlockingHash =
+        Animator.StringToHash("IsBlocking");
+
     private int comboIndex;
 
     private bool isAttacking;
     private bool attackQueued;
     private bool canContinueCombo;
     private bool isHeavyAttack;
+    private bool isBlocking;
+    private bool blockHeld;
+    private bool blockQueued;
+
+    public bool IsBlocking => isBlocking;
 
     public void OnLightAttack(InputAction.CallbackContext context)
     {
-        if (!context.performed || isHeavyAttack)
+        if (!context.performed || isHeavyAttack || isBlocking)
         {
             return;
         }
@@ -84,7 +92,7 @@ public class FirstPersonCombat : MonoBehaviour
 
     public void OnHeavyAttack(InputAction.CallbackContext context)
     {
-        if (!context.performed || isAttacking)
+        if (!context.performed || isAttacking || isBlocking)
         {
             return;
         }
@@ -104,10 +112,24 @@ public class FirstPersonCombat : MonoBehaviour
     {
         if (isHeavyAttack)
         {
+            // Heavy attacks can also cancel into block once their
+            // cancel window has been reached.
+            if (blockQueued && blockHeld)
+            {
+                CancelAttackIntoBlock();
+            }
+
             return;
         }
 
         canContinueCombo = true;
+
+        // Blocking takes priority over continuing the light combo.
+        if (blockQueued && blockHeld)
+        {
+            CancelAttackIntoBlock();
+            return;
+        }
 
         if (attackQueued)
         {
@@ -200,5 +222,73 @@ public class FirstPersonCombat : MonoBehaviour
         canContinueCombo = false;
 
         hitDetector.EndAttack();
+    }
+
+    public void OnBlock(InputAction.CallbackContext context)
+    {
+        if (context.started)
+        {
+            blockHeld = true;
+
+            if (isAttacking)
+            {
+                // Remember the input and block as soon as the
+                // current attack reaches its cancel window.
+                blockQueued = true;
+            }
+            else
+            {
+                StartBlock();
+            }
+        }
+
+        if (context.canceled)
+        {
+            blockHeld = false;
+            blockQueued = false;
+
+            StopBlock();
+        }
+    }
+
+    private void StartBlock()
+    {
+        if (isAttacking)
+        {
+            return;
+        }
+
+        isBlocking = true;
+
+        animator.SetBool(IsBlockingHash, true);
+    }
+
+    private void StopBlock()
+    {
+        if (!isBlocking)
+        {
+            return;
+        }
+
+        isBlocking = false;
+
+        animator.SetBool(IsBlockingHash, false);
+    }
+
+    private void CancelAttackIntoBlock()
+    {
+        hitDetector.EndAttack();
+
+        comboIndex = 0;
+
+        isAttacking = false;
+        isHeavyAttack = false;
+
+        attackQueued = false;
+        canContinueCombo = false;
+
+        blockQueued = false;
+
+        StartBlock();
     }
 }
