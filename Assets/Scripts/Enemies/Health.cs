@@ -20,15 +20,20 @@ public class Health : MonoBehaviour
     [SerializeField] private float maxHealth = 100f;
 
     private float currentHealth;
+    private DamageFlash damageFlash;
 
     private void Awake()
     {
         currentHealth = maxHealth;
+
+        damageFlash = GetComponent<DamageFlash>();
     }
 
     public void TakeDamage(float damage)
     {
         currentHealth -= damage;
+
+        damageFlash?.Flash();
 
         Debug.Log($"{name} took {damage} damage. Health: {currentHealth}");
 
