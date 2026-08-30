@@ -36,6 +36,16 @@ public class FirstPersonCombat : MonoBehaviour
     [SerializeField] private float heavyDamage = 50f;
     [SerializeField] private float heavyBonusRange = 0.4f;
 
+    [Header("Parry")]
+    [SerializeField] private float parryWindow = 0.2f;
+
+    private bool isParrying;
+    private float parryTimer;
+    public bool IsParrying => isParrying;
+
+    [Header("Attack Speed")]
+    [SerializeField] private float attackSpeed = 1f;
+
     private static readonly int LightAttack1Hash =
         Animator.StringToHash("LightAttack1");
 
@@ -58,10 +68,22 @@ public class FirstPersonCombat : MonoBehaviour
     private bool canContinueCombo;
     private bool isHeavyAttack;
     private bool isBlocking;
-    private bool blockHeld;
-    private bool blockQueued;
-
     public bool IsBlocking => isBlocking;
+
+    private void Update()
+    {
+        if (!isParrying)
+        {
+            return;
+        }
+
+        parryTimer -= Time.deltaTime;
+
+        if (parryTimer <= 0f)
+        {
+            isParrying = false;
+        }
+    }
 
     public void OnLightAttack(InputAction.CallbackContext context)
     {
@@ -100,6 +122,8 @@ public class FirstPersonCombat : MonoBehaviour
         isAttacking = true;
         isHeavyAttack = true;
 
+        SetAttackSpeed();
+
         hitDetector.ConfigureAttack(
             heavyDamage,
             heavyBonusRange
@@ -112,24 +136,10 @@ public class FirstPersonCombat : MonoBehaviour
     {
         if (isHeavyAttack)
         {
-            // Heavy attacks can also cancel into block once their
-            // cancel window has been reached.
-            if (blockQueued && blockHeld)
-            {
-                CancelAttackIntoBlock();
-            }
-
             return;
         }
 
         canContinueCombo = true;
-
-        // Blocking takes priority over continuing the light combo.
-        if (blockQueued && blockHeld)
-        {
-            CancelAttackIntoBlock();
-            return;
-        }
 
         if (attackQueued)
         {
@@ -181,6 +191,8 @@ public class FirstPersonCombat : MonoBehaviour
 
     private void PlayCurrentAttack()
     {
+        SetAttackSpeed();
+
         switch (comboIndex)
         {
             case 1:
@@ -222,43 +234,40 @@ public class FirstPersonCombat : MonoBehaviour
         canContinueCombo = false;
 
         hitDetector.EndAttack();
+
+        ResetAnimationSpeed();
     }
 
     public void OnBlock(InputAction.CallbackContext context)
     {
         if (context.started)
         {
-            blockHeld = true;
-
-            if (isAttacking)
-            {
-                // Remember the input and block as soon as the
-                // current attack reaches its cancel window.
-                blockQueued = true;
-            }
-            else
-            {
-                StartBlock();
-            }
+            StartBlock();
         }
 
         if (context.canceled)
         {
-            blockHeld = false;
-            blockQueued = false;
-
             StopBlock();
         }
     }
 
     private void StartBlock()
     {
-        if (isAttacking)
+        if (isBlocking)
         {
             return;
         }
 
+        if (isAttacking)
+        {
+            CancelCurrentAttack();
+        }
+
         isBlocking = true;
+
+        // Every new block starts with a short parry window.
+        isParrying = true;
+        parryTimer = parryWindow;
 
         animator.SetBool(IsBlockingHash, true);
     }
@@ -271,11 +280,12 @@ public class FirstPersonCombat : MonoBehaviour
         }
 
         isBlocking = false;
+        isParrying = false;
 
         animator.SetBool(IsBlockingHash, false);
     }
 
-    private void CancelAttackIntoBlock()
+    private void CancelCurrentAttack()
     {
         hitDetector.EndAttack();
 
@@ -287,8 +297,21 @@ public class FirstPersonCombat : MonoBehaviour
         attackQueued = false;
         canContinueCombo = false;
 
-        blockQueued = false;
+        animator.ResetTrigger(LightAttack1Hash);
+        animator.ResetTrigger(LightAttack2Hash);
+        animator.ResetTrigger(LightAttack3Hash);
+        animator.ResetTrigger(HeavyAttackHash);
 
-        StartBlock();
+        ResetAnimationSpeed();
+    }
+
+    private void SetAttackSpeed()
+    {
+        animator.speed = attackSpeed;
+    }
+
+    private void ResetAnimationSpeed()
+    {
+        animator.speed = 1f;
     }
 }
