@@ -39,9 +39,11 @@ public class FirstPersonCombat : MonoBehaviour
     [Header("Parry")]
     [SerializeField] private float parryWindow = 0.2f;
 
-    private bool isParrying;
-    private float parryTimer;
-    public bool IsParrying => isParrying;
+    [Header("Recovery")]
+    [SerializeField] private float light1Recovery = 0.45f;
+    [SerializeField] private float light2Recovery = 0.5f;
+    [SerializeField] private float light3Recovery = 0.65f;
+    [SerializeField] private float heavyRecovery = 0.85f;
 
     [Header("Attack Speed")]
     [SerializeField] private float attackSpeed = 1f;
@@ -70,30 +72,56 @@ public class FirstPersonCombat : MonoBehaviour
     private bool isBlocking;
     public bool IsBlocking => isBlocking;
 
+    private bool isParrying;
+    private float parryTimer;
+    public bool IsParrying => isParrying;
+    private bool attackRecoveryActive;
+    private float attackRecoveryTimer;
+
+    private bool bufferedLightAttack;
+    private bool bufferedHeavyAttack;
+
     private void Update()
     {
-        if (!isParrying)
+        if (attackRecoveryActive)
         {
-            return;
+            attackRecoveryTimer -= Time.deltaTime;
+
+            if (attackRecoveryTimer <= 0f)
+            {
+                attackRecoveryActive = false;
+
+                TryUseBufferedAttack();
+            }
         }
 
-        parryTimer -= Time.deltaTime;
-
-        if (parryTimer <= 0f)
+        if (isParrying)
         {
-            isParrying = false;
+            parryTimer -= Time.deltaTime;
+
+            if (parryTimer <= 0f)
+            {
+                isParrying = false;
+            }
         }
     }
 
     public void OnLightAttack(InputAction.CallbackContext context)
     {
-        if (!context.performed || isHeavyAttack || isBlocking)
+        if (!context.performed || isBlocking || isHeavyAttack)
         {
             return;
         }
 
+        // Start a new combo.
         if (!isAttacking)
         {
+            if (attackRecoveryActive)
+            {
+                bufferedLightAttack = true;
+                return;
+            }
+
             comboIndex = 1;
             isAttacking = true;
 
@@ -101,6 +129,7 @@ public class FirstPersonCombat : MonoBehaviour
             return;
         }
 
+        // Queue the next attack in the current combo.
         if (comboIndex < 3)
         {
             attackQueued = true;
@@ -114,11 +143,22 @@ public class FirstPersonCombat : MonoBehaviour
 
     public void OnHeavyAttack(InputAction.CallbackContext context)
     {
-        if (!context.performed || isAttacking || isBlocking)
+        if (!context.performed || isBlocking || isAttacking)
         {
             return;
         }
 
+        if (attackRecoveryActive)
+        {
+            bufferedHeavyAttack = true;
+            return;
+        }
+
+        StartHeavyAttack();
+    }
+
+    private void StartHeavyAttack()
+    {
         isAttacking = true;
         isHeavyAttack = true;
 
@@ -128,6 +168,8 @@ public class FirstPersonCombat : MonoBehaviour
             heavyDamage,
             heavyBonusRange
         );
+
+        StartRecovery(heavyRecovery);
 
         animator.SetTrigger(HeavyAttackHash);
     }
@@ -201,6 +243,8 @@ public class FirstPersonCombat : MonoBehaviour
                     light1BonusRange
                 );
 
+                StartRecovery(light1Recovery);
+
                 animator.SetTrigger(LightAttack1Hash);
                 break;
 
@@ -210,6 +254,8 @@ public class FirstPersonCombat : MonoBehaviour
                     light2BonusRange
                 );
 
+                StartRecovery(light2Recovery);
+
                 animator.SetTrigger(LightAttack2Hash);
                 break;
 
@@ -218,6 +264,8 @@ public class FirstPersonCombat : MonoBehaviour
                     light3Damage,
                     light3BonusRange
                 );
+
+                StartRecovery(light3Recovery);
 
                 animator.SetTrigger(LightAttack3Hash);
                 break;
@@ -313,5 +361,40 @@ public class FirstPersonCombat : MonoBehaviour
     private void ResetAnimationSpeed()
     {
         animator.speed = 1f;
+    }
+
+    // Recovery
+
+    private void StartRecovery(float duration)
+    {
+        attackRecoveryActive = true;
+        attackRecoveryTimer = duration;
+    }
+
+    // Buffered Attacks
+
+    private void TryUseBufferedAttack()
+    {
+        if (isBlocking || isAttacking)
+        {
+            return;
+        }
+
+        if (bufferedHeavyAttack)
+        {
+            bufferedHeavyAttack = false;
+            StartHeavyAttack();
+            return;
+        }
+
+        if (bufferedLightAttack)
+        {
+            bufferedLightAttack = false;
+
+            comboIndex = 1;
+            isAttacking = true;
+
+            PlayCurrentAttack();
+        }
     }
 }
