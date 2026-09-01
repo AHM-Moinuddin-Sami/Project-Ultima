@@ -2122,7 +2122,7 @@ MonoBehaviour:
   enemyCombat: {fileID: 1396542039}
   animator: {fileID: 684993061}
   chaseRange: 12
-  attackRange: 2
+  attackRange: 2.3
   walkAnimationReferenceSpeed: 1.544
   maxAnimationSpeedMultiplier: 1.5
 --- !u!114 &1396542045
@@ -2153,7 +2153,7 @@ MonoBehaviour:
       leadInRadiusWhenApproachingDestination: 1
       allowRotatingOnSpotBacking: 1
     debugFlags: 64
-    stopDistance: 1.4
+    stopDistance: 2
     rotationSmoothing: 0.05
     positionSmoothing: 0.05
     groundMask:
@@ -2375,15 +2375,15 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 4012142743999388, guid: 02118f3f769d0104dbc7533300879896, type: 3}
       propertyPath: m_LocalEulerAnglesHint.x
-      value: 1.1422954
+      value: 0.27181104
       objectReference: {fileID: 0}
     - target: {fileID: 4012142743999388, guid: 02118f3f769d0104dbc7533300879896, type: 3}
       propertyPath: m_LocalEulerAnglesHint.y
-      value: -0.00000838511
+      value: -0.000009978105
       objectReference: {fileID: 0}
     - target: {fileID: 4012142743999388, guid: 02118f3f769d0104dbc7533300879896, type: 3}
       propertyPath: m_LocalEulerAnglesHint.z
-      value: 0.000008435715
+      value: 0.0000066064595
       objectReference: {fileID: 0}
     - target: {fileID: 4023172234764920, guid: 02118f3f769d0104dbc7533300879896, type: 3}
       propertyPath: m_LocalEulerAnglesHint.x
@@ -2627,7 +2627,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 4400937805232052, guid: 02118f3f769d0104dbc7533300879896, type: 3}
       propertyPath: m_LocalEulerAnglesHint.x
-      value: 2.690542
+      value: 2.6905513
       objectReference: {fileID: 0}
     - target: {fileID: 4400937805232052, guid: 02118f3f769d0104dbc7533300879896, type: 3}
       propertyPath: m_LocalEulerAnglesHint.y
@@ -2635,7 +2635,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 4400937805232052, guid: 02118f3f769d0104dbc7533300879896, type: 3}
       propertyPath: m_LocalEulerAnglesHint.z
-      value: 82.706215
+      value: 82.70624
       objectReference: {fileID: 0}
     - target: {fileID: 4451279306304026, guid: 02118f3f769d0104dbc7533300879896, type: 3}
       propertyPath: m_LocalEulerAnglesHint.x
@@ -2675,15 +2675,15 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 4513488104266906, guid: 02118f3f769d0104dbc7533300879896, type: 3}
       propertyPath: m_LocalEulerAnglesHint.x
-      value: -8.277284
+      value: -12.136565
       objectReference: {fileID: 0}
     - target: {fileID: 4513488104266906, guid: 02118f3f769d0104dbc7533300879896, type: 3}
       propertyPath: m_LocalEulerAnglesHint.y
-      value: -0.0000038379794
+      value: -0.0000025761633
       objectReference: {fileID: 0}
     - target: {fileID: 4513488104266906, guid: 02118f3f769d0104dbc7533300879896, type: 3}
       propertyPath: m_LocalEulerAnglesHint.z
-      value: -0.000007742855
+      value: -0.0000061408814
       objectReference: {fileID: 0}
     - target: {fileID: 4530195403422952, guid: 02118f3f769d0104dbc7533300879896, type: 3}
       propertyPath: m_LocalEulerAnglesHint.x

@@ -81,7 +81,7 @@ public class Health : MonoBehaviour
         FollowerEntity follower = GetComponent<FollowerEntity>();
         if (follower != null)
         {
-            follower.canMove = false;
+            follower.simulateMovement = false;
             follower.enabled = false;
         }
 

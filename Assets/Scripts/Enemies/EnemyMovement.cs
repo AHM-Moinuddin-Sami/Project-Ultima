@@ -8,16 +8,23 @@ using UnityEngine;
  *
  * Responsibilities:
  * - detect the player within chase range
- * - approach the player, using FollowerEntity's own stopDistance to halt
- *   at a melee standoff instead of walking onto the player's exact
- *   position (which is what caused it to shove the player around)
- * - pass a facing direction into every destination update, so
- *   FollowerEntity's own movement controller handles turning to face
- *   the player smoothly, both while approaching and once stopped --
- *   no separate "who owns rotation" handoff needed like AIPath required
- * - stop while staggered
- * - drive the Walk animation's own playback rate from actual velocity
- *   so the stride matches how fast the enemy is really moving
+ * - approach the player using FollowerEntity
+ * - stop at melee distance
+ * - face the player while approaching and while stopped
+ * - stop movement during attacks and staggers
+ * - wait for the movement animation to actually begin before physically
+ *   moving again after an attack or stagger
+ * - drive walk animation playback speed from actual movement velocity
+ *
+ * Animator state tags required:
+ * - Attack animations  -> "Attack"
+ * - Stagger animations -> "Stagger"
+ * - Walk/Run state     -> "Movement"
+ *
+ * Important:
+ * Idle should NOT use the "Movement" tag. We specifically wait until
+ * the walk/run animation has actually become active before allowing
+ * FollowerEntity to move after an action.
  */
 
 [RequireComponent(typeof(FollowerEntity))]
@@ -33,12 +40,15 @@ public class EnemyMovement : MonoBehaviour
     [SerializeField] private float attackRange = 2f;
 
     [Header("Animation")]
-    // Longs_WalkFwd's own authored pace (AnimationClip.averageSpeed), so a
-    // MoveSpeed of 1 plays the clip at the speed it was actually animated for.
     [SerializeField] private float walkAnimationReferenceSpeed = 1.544f;
     [SerializeField] private float maxAnimationSpeedMultiplier = 1.5f;
 
     private FollowerEntity follower;
+
+    // Becomes true whenever an attack/stagger interrupts movement.
+    // We then wait until the Animator has actually entered its
+    // Movement state before enabling physical movement again.
+    private bool waitingForMovementAnimation;
 
     private static readonly int IsMovingHash =
         Animator.StringToHash("IsMoving");
@@ -53,17 +63,28 @@ public class EnemyMovement : MonoBehaviour
 
     private void Update()
     {
-        // Horizontal-only distance: the player's transform sits at
-        // eye height while the enemy's sits near the ground, so a
-        // full 3D distance would carry a large, constant vertical
-        // offset that has nothing to do with melee range.
         Vector3 enemyToPlayer = player.position - transform.position;
         enemyToPlayer.y = 0f;
+
         float distanceToPlayer = enemyToPlayer.magnitude;
 
-        // Stagger completely interrupts movement.
-        if (enemyCombat.IsStaggered)
+        AnimatorStateInfo currentState =
+            animator.GetCurrentAnimatorStateInfo(0);
+
+        bool isInAttack = currentState.IsTag("Attack");
+        bool isInStagger = currentState.IsTag("Stagger");
+
+        /*
+         * An attack/stagger owns the character completely.
+         *
+         * We check the Animator itself instead of relying only on
+         * EnemyCombat timers because the actual animation may still
+         * be playing or transitioning.
+         */
+        if (enemyCombat.IsStaggered || isInAttack || isInStagger)
         {
+            waitingForMovementAnimation = true;
+
             StopMoving();
             return;
         }
@@ -71,18 +92,44 @@ public class EnemyMovement : MonoBehaviour
         // Player is outside detection range.
         if (distanceToPlayer > chaseRange)
         {
+            waitingForMovementAnimation = false;
+
             StopMoving();
             return;
         }
 
-        // Always head for the player's actual position and face them;
-        // FollowerEntity's own stopDistance (set in the Inspector, kept
-        // comfortably inside attackRange) halts the approach at melee
-        // range on its own, and keeps enforcing the facing direction
-        // even once stopped -- so this one call covers both chasing
-        // and standing in melee, no separate state machine required.
-        follower.SetDestination(player.position, enemyToPlayer.normalized);
-        follower.canMove = true;
+        /*
+         * Keep the path destination updated even while movement is
+         * temporarily locked.
+         */
+        follower.SetDestination(
+            player.position,
+            enemyToPlayer.normalized
+        );
+
+        /*
+         * If an attack/stagger just ended, tell the Animator that
+         * we want to start locomotion.
+         *
+         * Physical movement remains disabled until the Animator has
+         * actually reached the Movement state.
+         */
+        if (waitingForMovementAnimation)
+        {
+            animator.SetBool(IsMovingHash, true);
+
+            if (!currentState.IsTag("Movement"))
+            {
+                follower.simulateMovement = false;
+                animator.SetFloat(MoveSpeedHash, 1f);
+                return;
+            }
+
+            // Walk animation has actually begun.
+            waitingForMovementAnimation = false;
+        }
+
+        follower.simulateMovement = true;
 
         if (distanceToPlayer <= attackRange)
         {
@@ -94,7 +141,7 @@ public class EnemyMovement : MonoBehaviour
 
     private void StopMoving()
     {
-        follower.canMove = false;
+        follower.simulateMovement = false;
 
         animator.SetBool(IsMovingHash, false);
         animator.SetFloat(MoveSpeedHash, 0f);
@@ -104,18 +151,24 @@ public class EnemyMovement : MonoBehaviour
     {
         float speed = follower.velocity.magnitude;
 
-        // Hysteresis on the Walk/Idle switch -- velocity dithers right
-        // around a single threshold while easing in/out of a stop,
-        // which would otherwise flicker the animation.
+        // Hysteresis prevents Idle/Walk flickering around zero velocity.
         bool wasMoving = animator.GetBool(IsMovingHash);
-        bool isMoving = wasMoving ? speed > 0.05f : speed > 0.2f;
+        bool isMoving = wasMoving
+            ? speed > 0.05f
+            : speed > 0.2f;
 
         animator.SetBool(IsMovingHash, isMoving);
 
-        float speedMultiplier = speed / walkAnimationReferenceSpeed;
+        float speedMultiplier =
+            speed / walkAnimationReferenceSpeed;
+
         animator.SetFloat(
             MoveSpeedHash,
-            Mathf.Clamp(speedMultiplier, 0f, maxAnimationSpeedMultiplier)
+            Mathf.Clamp(
+                speedMultiplier,
+                0f,
+                maxAnimationSpeedMultiplier
+            )
         );
     }
 }
