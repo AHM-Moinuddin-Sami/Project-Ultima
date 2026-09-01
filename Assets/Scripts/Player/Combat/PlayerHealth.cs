@@ -6,12 +6,10 @@ using UnityEngine;
  * Handles damage received by the player.
  *
  * Responsibilities:
- * - apply full damage normally
- * - reduce damage while blocking
- * - negate damage during a parry window
- *
- * Later this can also trigger stagger, UI, death, stamina loss,
- * sounds, VFX, and parry reactions.
+ * - receive normal damage
+ * - reduce blocked damage
+ * - negate parried damage
+ * - return the result so the attacker can react
  */
 
 public class PlayerHealth : MonoBehaviour
@@ -33,17 +31,29 @@ public class PlayerHealth : MonoBehaviour
         currentHealth = maxHealth;
     }
 
-    public void TakeDamage(float damage)
+    public HitResult TakeDamage(float damage)
     {
         if (combat.IsParrying)
         {
             Debug.Log("Parry!");
-            return;
+
+            return HitResult.Parried;
         }
 
         if (combat.IsBlocking)
         {
             damage *= blockDamageMultiplier;
+
+            currentHealth -= damage;
+
+            Debug.Log($"Blocked hit. Damage: {damage}. Health: {currentHealth}");
+
+            if (currentHealth <= 0f)
+            {
+                Die();
+            }
+
+            return HitResult.Blocked;
         }
 
         currentHealth -= damage;
@@ -54,6 +64,8 @@ public class PlayerHealth : MonoBehaviour
         {
             Die();
         }
+
+        return HitResult.Hit;
     }
 
     private void Die()

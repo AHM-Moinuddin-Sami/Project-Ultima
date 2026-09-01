@@ -16,10 +16,10 @@ TagManager:
   - PlayerBody
   - HiddenFirstPersonParts
   - Damageable
-  - 
-  - 
-  - 
-  - 
+  - Navigation
+  - NavigationObstacle
+  - Enemy
+  - Player
   - 
   - 
   - 

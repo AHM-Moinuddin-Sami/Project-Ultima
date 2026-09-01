@@ -1,3 +1,4 @@
+using Pathfinding;
 using UnityEngine;
 
 /*
@@ -8,10 +9,11 @@ using UnityEngine;
  * Responsibilities:
  * - track current health
  * - receive damage
- * - destroy the object when health reaches zero
+ * - play a death animation and disable AI/combat/collision, then
+ *   destroy the object once the death animation has played out
  *
- * This is intentionally generic so enemies, props, and other
- * damageable objects can all use the same component.
+ * The animator reference is optional so this can still be used by
+ * non-animated damageable props.
  */
 
 public class Health : MonoBehaviour
@@ -19,8 +21,21 @@ public class Health : MonoBehaviour
     [Header("Health")]
     [SerializeField] private float maxHealth = 100f;
 
+    [Header("Death")]
+    [SerializeField] private Animator animator;
+    [SerializeField] private float destroyDelay = 3f;
+
+    private static readonly int DeathHash =
+        Animator.StringToHash("Death");
+
+    private static readonly int IsDeadHash =
+        Animator.StringToHash("IsDead");
+
     private float currentHealth;
     private DamageFlash damageFlash;
+    private bool isDead;
+
+    public bool IsDead => isDead;
 
     private void Awake()
     {
@@ -31,6 +46,11 @@ public class Health : MonoBehaviour
 
     public void TakeDamage(float damage)
     {
+        if (isDead)
+        {
+            return;
+        }
+
         currentHealth -= damage;
 
         damageFlash?.Flash();
@@ -45,6 +65,38 @@ public class Health : MonoBehaviour
 
     private void Die()
     {
-        Destroy(gameObject);
+        isDead = true;
+
+        if (animator != null)
+        {
+            animator.SetBool(IsDeadHash, true);
+            animator.SetTrigger(DeathHash);
+        }
+
+        foreach (Collider hitCollider in GetComponentsInChildren<Collider>())
+        {
+            hitCollider.enabled = false;
+        }
+
+        FollowerEntity follower = GetComponent<FollowerEntity>();
+        if (follower != null)
+        {
+            follower.canMove = false;
+            follower.enabled = false;
+        }
+
+        EnemyMovement movement = GetComponent<EnemyMovement>();
+        if (movement != null)
+        {
+            movement.enabled = false;
+        }
+
+        EnemyCombat combat = GetComponent<EnemyCombat>();
+        if (combat != null)
+        {
+            combat.enabled = false;
+        }
+
+        Destroy(gameObject, destroyDelay);
     }
 }
