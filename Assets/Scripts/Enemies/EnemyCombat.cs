@@ -17,10 +17,17 @@ using UnityEngine;
  * - prevent attacking while staggered or on cooldown
  *
  * The combo chain itself lives in the Animator: each ComboN state has
- * two exit-time transitions -- one to ComboN+1 gated on the
- * ComboContinue bool, one unconditional fallback to that step's own
- * recovery clip (ComboN_Stop -> Idle). SetComboContinuation() is the
- * only thing this script needs to drive that: it's expected to be
+ * two exit-time transitions -- one to ComboN+1 (early, right after the
+ * step's own impact) gated on the ComboContinue bool, one unconditional
+ * fallback (later, near the end of the step's own follow-through)
+ * straight to Idle. There used to be a dedicated ComboN_Stop clip on
+ * that fallback, but those clips are actually the pack's "attack
+ * blocked" reaction animations (a raised parry/guard pose), not a
+ * recovery-to-idle motion -- using them made every non-chained hit look
+ * like it was swinging twice. Letting each step just finish its own
+ * animation and blend to Idle reads as one clean swing.
+ * SetComboContinuation() is the only thing this script needs to drive
+ * that: it's expected to be
  * called every frame while IsAttacking is true (EnemyAI does this,
  * based on whether the target is still in range). Whatever step is
  * currently mid-swing always finishes -- there's no cosmetic way to
